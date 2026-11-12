@@ -94,7 +94,7 @@ a um curso retornam `404`.
 [![Lint](https://github.com/gmatosc/TabnewsCLO/actions/workflows/lint.yaml/badge.svg)](https://github.com/gmatosc/TabnewsCLO/actions/workflows/lint.yaml)
 [![Tests](https://github.com/gmatosc/TabnewsCLO/actions/workflows/tests.yaml/badge.svg)](https://github.com/gmatosc/TabnewsCLO/actions/workflows/tests.yaml)
 
-Pull Request: [LINK_PR_BLOQUEADO](LINK_PR_BLOQUEADO)
+PR que comprova o bloqueio do CI: [#17](https://github.com/gmatosc/TabnewsCLO/pull/17)
 
 Os workflows executam em pull requests e em pushes para `main`.
 
