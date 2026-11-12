@@ -1,0 +1,486 @@
+openapi: 3.0.3
+info:
+  title: TabnewsCLO API
+  version: 1.0.0
+  description: API for service status, database migrations, and study courses.
+paths:
+  /api/v1/status:
+    get:
+      operationId: getStatus
+      summary: Get service status
+      responses:
+        "200":
+          description: Service and database status.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - update_at
+                  - dependencies
+                properties:
+                  update_at:
+                    type: string
+                    format: date-time
+                  dependencies:
+                    type: object
+                    required:
+                      - database
+                    properties:
+                      database:
+                        type: object
+                        required:
+                          - version
+                          - max_connections
+                          - opened_connections
+                        properties:
+                          version:
+                            type: string
+                          max_connections:
+                            type: integer
+                          opened_connections:
+                            type: integer
+              example:
+                update_at: "2026-11-12T19:00:00.000Z"
+                dependencies:
+                  database:
+                    version: "16.15"
+                    max_connections: 100
+                    opened_connections: 1
+  /api/v1/migrations:
+    get:
+      operationId: getPendingMigrations
+      summary: List pending database migrations
+      responses:
+        "200":
+          description: Pending migrations, or an empty array when none are pending.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - path
+                    - name
+                    - timestamp
+                  properties:
+                    path:
+                      type: string
+                    name:
+                      type: string
+                    timestamp:
+                      type: integer
+                      format: int64
+              examples:
+                pending:
+                  summary: A pending migration
+                  value:
+                    - path: infra/migrations/1794512724700_create-courses.js
+                      name: 1794512724700_create-courses
+                      timestamp: 1794512724700
+                none:
+                  summary: No pending migrations
+                  value: []
+        "405":
+          description: The request method is not supported.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: 'Method "PUT" not allowed'
+    post:
+      operationId: applyMigrations
+      summary: Apply pending database migrations
+      description: Returns 201 when migrations were applied and 200 when none were pending.
+      responses:
+        "200":
+          description: No migrations were pending.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - path
+                    - name
+                    - timestamp
+                  properties:
+                    path:
+                      type: string
+                    name:
+                      type: string
+                    timestamp:
+                      type: integer
+                      format: int64
+              example: []
+        "201":
+          description: Pending migrations were applied.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - path
+                    - name
+                    - timestamp
+                  properties:
+                    path:
+                      type: string
+                    name:
+                      type: string
+                    timestamp:
+                      type: integer
+                      format: int64
+              example:
+                - path: infra/migrations/1794512724700_create-courses.js
+                  name: 1794512724700_create-courses
+                  timestamp: 1794512724700
+        "405":
+          description: The request method is not supported.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: 'Method "PUT" not allowed'
+  /api/v1/courses:
+    get:
+      operationId: getCourses
+      summary: List courses
+      responses:
+        "200":
+          description: The courses ordered by creation time.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Course"
+              example:
+                - id: 64c2dd45-d70d-48e5-ae8c-905342f9a4f6
+                  title: Foundations
+                  description: Core concepts
+                  status: in_progress
+                  created_at: "2026-11-12T18:00:00.000Z"
+                  updated_at: "2026-11-12T18:00:00.000Z"
+        "405":
+          description: The request method is not supported.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: 'Method "PUT" not allowed'
+        "500":
+          description: An unexpected server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Internal server error
+    post:
+      operationId: createCourse
+      summary: Create a course
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/CourseInput"
+                - type: object
+                  required:
+                    - title
+            example:
+              title: Foundations
+              description: Core concepts
+              status: planned
+      responses:
+        "201":
+          description: The created course.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+              example:
+                id: 64c2dd45-d70d-48e5-ae8c-905342f9a4f6
+                title: Foundations
+                description: Core concepts
+                status: planned
+                created_at: "2026-11-12T18:00:00.000Z"
+                updated_at: "2026-11-12T18:00:00.000Z"
+        "400":
+          description: The course input is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                missingTitle:
+                  summary: Title is missing or invalid
+                  value:
+                    error: title must be a non-empty string of at most 120 characters
+                invalidStatus:
+                  summary: Status is not supported
+                  value:
+                    error: Invalid course status
+                invalidDescription:
+                  summary: Description must be text or null
+                  value:
+                    error: description must be a string
+                unsupportedField:
+                  summary: An unsupported field was provided
+                  value:
+                    error: Invalid course data
+        "405":
+          description: The request method is not supported.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: 'Method "PUT" not allowed'
+        "500":
+          description: An unexpected server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Internal server error
+  /api/v1/courses/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Canonical UUID of the course.
+        schema:
+          type: string
+          format: uuid
+          pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        example: 64c2dd45-d70d-48e5-ae8c-905342f9a4f6
+    get:
+      operationId: getCourse
+      summary: Get a course by ID
+      responses:
+        "200":
+          description: The requested course.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+              example:
+                id: 64c2dd45-d70d-48e5-ae8c-905342f9a4f6
+                title: Foundations
+                description: Core concepts
+                status: in_progress
+                created_at: "2026-11-12T18:00:00.000Z"
+                updated_at: "2026-11-12T18:00:00.000Z"
+        "404":
+          description: The ID is not a UUID or no course has that ID.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Course not found
+        "405":
+          description: The request method is not supported.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: 'Method "PUT" not allowed'
+        "500":
+          description: An unexpected server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Internal server error
+    patch:
+      operationId: updateCourse
+      summary: Update a course
+      description: At least one supported field must be provided. Omitted fields are unchanged.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/CourseInput"
+                - type: object
+                  minProperties: 1
+            examples:
+              updateTitle:
+                summary: Update the title and status
+                value:
+                  title: Advanced foundations
+                  status: in_progress
+              clearDescription:
+                summary: Clear the description
+                value:
+                  description: null
+      responses:
+        "200":
+          description: The updated course.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+              example:
+                id: 64c2dd45-d70d-48e5-ae8c-905342f9a4f6
+                title: Advanced foundations
+                description: Core concepts
+                status: in_progress
+                created_at: "2026-11-12T18:00:00.000Z"
+                updated_at: "2026-11-12T18:15:00.000Z"
+        "400":
+          description: The course input is invalid or contains no fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                invalidData:
+                  summary: Empty body or unsupported field
+                  value:
+                    error: Invalid course data
+                invalidTitle:
+                  summary: Title is empty or longer than 120 characters
+                  value:
+                    error: title must be a non-empty string of at most 120 characters
+                invalidStatus:
+                  summary: Status is not supported
+                  value:
+                    error: Invalid course status
+                invalidDescription:
+                  summary: Description must be text or null
+                  value:
+                    error: description must be a string
+        "404":
+          description: The ID is not a UUID or no course has that ID.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Course not found
+        "405":
+          description: The request method is not supported.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: 'Method "PUT" not allowed'
+        "500":
+          description: An unexpected server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Internal server error
+    delete:
+      operationId: deleteCourse
+      summary: Delete a course
+      responses:
+        "204":
+          description: The course was deleted. The response has no body.
+        "404":
+          description: The ID is not a UUID or no course has that ID.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Course not found
+        "405":
+          description: The request method is not supported.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: 'Method "PUT" not allowed'
+        "500":
+          description: An unexpected server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Internal server error
+components:
+  schemas:
+    Course:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - status
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+          pattern: '\S'
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum:
+            - planned
+            - in_progress
+            - done
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CourseInput:
+      type: object
+      additionalProperties: false
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+          pattern: '\S'
+          description: Required on create; optional on update.
+        description:
+          type: string
+          nullable: true
+          description: Send null to clear the description when updating.
+        status:
+          type: string
+          enum:
+            - planned
+            - in_progress
+            - done
+          description: Defaults to planned on create.
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
