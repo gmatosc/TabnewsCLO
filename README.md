@@ -102,10 +102,22 @@ Os workflows executam em pull requests e em pushes para `main`.
 
 Aplicação publicada na Vercel: <https://tabnews-clone-gray-alpha.vercel.app>
 
+O banco de produção fica no Supabase, no plano gratuito, que pausa após 7 dias
+sem uso. O workflow Keep Alive chama `/api/v1/status` diariamente para manter o
+banco ativo. Ele só roda a partir da `main` e também pode ser disparado
+manualmente em Actions > Keep Alive > Run workflow.
+
 ## ADR
 
 Decisão sobre o uso de PostgreSQL local via Docker e Supabase em produção:
 [ADR 0001 — Banco PostgreSQL local e Supabase](docs/adr/0001-banco-postgres-supabase.md).
+
+## Convenção de commits
+
+Os commits do Projeto Final seguem Conventional Commits em inglês (`feat`,
+`fix`, `test`, `docs`, `ci`, `chore`, `style`). Os commits mais antigos da
+`main`, anteriores ao Projeto Final, vieram de um estudo anterior e estão em
+português, fora desse padrão.
 
 ## Desempenho
 

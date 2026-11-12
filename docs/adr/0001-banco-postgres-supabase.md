@@ -57,7 +57,7 @@ Foi riscado na issue #14 porque o serviço foi descontinuado.
 
 ### Negativas e riscos
 
-- No plano gratuito, o projeto é pausado após 7 dias sem atividade. Durante o período de avaliação, a mitigação é manter acessos periódicos a `/api/v1/status`.
+- No plano gratuito, o projeto é pausado após 7 dias sem atividade. Mitigação: o workflow agendado `.github/workflows/keep-alive.yaml` chama `GET /api/v1/status` em produção uma vez por dia. A rota consulta o PostgreSQL, gerando atividade no banco. Se o banco estiver pausado, o job falha e o GitHub envia alerta por e-mail.
 - O banco tem limite de 500 MB.
 - O plano gratuito não oferece backups automáticos.
 - O endpoint `POST /api/v1/migrations` ainda não tem autenticação.
@@ -69,3 +69,4 @@ Foi riscado na issue #14 porque o serviço foi descontinuado.
 - Commits: `a491b4c`, `410ada3`, `cefc9e0`, `65496b4`, `5ef74c0`, `ec5dddb` e `29e3d08`
 - [Preços do Supabase](https://supabase.com/pricing)
 - [Planos do Neon](https://neon.com/docs/introduction/plans)
+- Workflow `.github/workflows/keep-alive.yaml`
