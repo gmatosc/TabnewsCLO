@@ -1,0 +1,19 @@
+name: Keep Alive
+
+on:
+  schedule:
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Ping production database
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call status endpoint
+        run: |
+          curl --fail --silent --show-error \
+            --retry 3 --retry-delay 10 \
+            https://tabnews-clone-gray-alpha.vercel.app/api/v1/status \
+            | tee response.json
+          grep -q '"version"' response.json
